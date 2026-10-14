@@ -4,8 +4,9 @@ const postSchema = new mongoose.Schema({
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: true,
   },
-  content: String,
+  content: { type: String, required: true, trim: true, maxlength: 2000 },
   file: String,
 
   likes: [

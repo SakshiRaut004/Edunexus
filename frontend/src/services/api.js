@@ -1,7 +1,24 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  timeout: 15000,
 });
+
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = "Bearer " + token;
+  }
+
+  return config;
+});
+
+export const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: "Bearer " + token } : {};
+};
 
 export default API;

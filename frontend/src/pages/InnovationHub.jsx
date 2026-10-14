@@ -1,50 +1,63 @@
 import { useState, useEffect } from "react";
 import API from "../services/api";
 
-export default function InnovationHub() {
+const loadPosts = () => API.get("/posts");
+
+export default function InnovationHub({ searchQuery = "" }) {
   const [content, setContent] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const res = await API.get("/posts", {
-        headers: { Authorization: `Bearer ${token}` },
+    let active = true;
+    loadPosts()
+      .then((res) => {
+        if (active) setPosts(res.data);
+      })
+      .catch((err) => {
+        if (active) setError(err.response?.data?.message || "The faculty network could not be loaded. Please try again.");
+      })
+      .finally(() => {
+        if (active) setLoadingPosts(false);
       });
 
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const fetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const res = await loadPosts();
       setPosts(res.data);
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || "The faculty network could not be loaded. Please try again.");
+    } finally {
+      setLoadingPosts(false);
     }
   };
 
   const handlePost = async () => {
-    if (!content.trim()) {
-      alert("Write something!");
-      return;
-    }
+    if (!content.trim()) return;
+    setError("");
 
     try {
       setLoading(true);
 
       await API.post(
         "/posts",
-        { content },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { content: content.trim() }
       );
 
       setContent("");
-      fetchPosts();
+      await fetchPosts();
     } catch (err) {
-      alert("Error posting content");
+      setError(err.response?.data?.message || "Your post couldn't be shared. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -54,15 +67,12 @@ export default function InnovationHub() {
     try {
       await API.put(
         `/posts/${postId}/like`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        {}
       );
 
-      fetchPosts();
+      await fetchPosts();
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || "Like could not be saved. Please try again.");
     }
   };
 
@@ -72,42 +82,48 @@ export default function InnovationHub() {
     try {
       await API.post(
         `/posts/${postId}/comment`,
-        { text },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { text }
       );
 
       resetInput();
-      fetchPosts();
+      await fetchPosts();
     } catch (err) {
-      console.error(err);
+      setError(err.response?.data?.message || "Comment could not be added. Please try again.");
     }
   };
 
+  const visiblePosts = posts.filter((post) => {
+    const query = searchQuery.trim().toLowerCase();
+    return !query || `${post.content} ${post.facultyId?.name || ""}`.toLowerCase().includes(query);
+  });
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-4 max-w-4xl mx-auto">
       {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold text-gray-800">
-          Innovation Hub
+          Faculty exchange
         </h1>
         <p className="text-gray-500">
-          Share ideas, teaching methods, and innovations
+          Practical ideas and meaningful milestones from across the network.
         </p>
       </div>
 
       {/* CREATE POST CARD */}
-      <div className="bg-white rounded-xl shadow-md p-5 space-y-3">
+      <div className="bg-white rounded-lg border border-gray-200 p-5 space-y-3">
         <textarea
-          placeholder="Share your ideas or teaching techniques..."
+          id="community-composer"
+          aria-label="Share with the faculty network"
+          maxLength={2000}
+          placeholder="What are you working on? Share a teaching idea, project, or faculty milestone..."
           className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           rows={3}
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-gray-400">{content.length}/2000</span>
           <button
             onClick={handlePost}
             disabled={loading}
@@ -123,17 +139,20 @@ export default function InnovationHub() {
       </div>
 
       {/* FEED */}
+      {error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+
       <div className="space-y-4">
-        {posts.length === 0 && (
-          <div className="text-center text-gray-500">
-            No posts yet. Be the first to share an idea!
+        {loadingPosts && <p className="py-8 text-center text-sm text-gray-500">Loading faculty posts...</p>}
+        {!loadingPosts && visiblePosts.length === 0 && (
+          <div className="rounded-lg border border-gray-200 bg-white px-5 py-8 text-center text-sm text-gray-500">
+            {searchQuery ? "No posts match your search." : "No posts yet. Share the first idea with your colleagues."}
           </div>
         )}
 
-        {posts.map((post) => (
+        {visiblePosts.map((post) => (
           <div
             key={post._id}
-            className="bg-white rounded-xl shadow-md p-5 space-y-3"
+            className="bg-white rounded-lg border border-gray-200 p-5 space-y-3"
           >
             {/* HEADER */}
             <div className="flex justify-between items-center">

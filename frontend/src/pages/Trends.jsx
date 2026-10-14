@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useEffectEvent, useState } from "react";
+import { motion as Motion } from "framer-motion";
 import {
   FaGlobe,
   FaSearch,
@@ -19,10 +19,6 @@ export default function Trends() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("All");
-
-  useEffect(() => {
-    fetchNews();
-  }, []);
 
   // ---------------- RSS PARSER ----------------
 
@@ -63,28 +59,53 @@ export default function Trends() {
   };
 
   const fetchNews = async () => {
+    const indiaRSS =
+      "https://news.google.com/rss/search?q=education+india&hl=en-IN&gl=IN&ceid=IN:en";
+
+    const worldRSS =
+      "https://news.google.com/rss/search?q=education&hl=en-US&gl=US&ceid=US:en";
+
+    const [india, world] = await Promise.all([
+      parseRSS(indiaRSS),
+      parseRSS(worldRSS),
+    ]);
+
+    return { india: india.slice(0, 12), world: world.slice(0, 12) };
+  };
+
+  const refreshNews = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-
-      const indiaRSS =
-        "https://news.google.com/rss/search?q=education+india&hl=en-IN&gl=IN&ceid=IN:en";
-
-      const worldRSS =
-        "https://news.google.com/rss/search?q=education&hl=en-US&gl=US&ceid=US:en";
-
-      const [india, world] = await Promise.all([
-        parseRSS(indiaRSS),
-        parseRSS(worldRSS),
-      ]);
-
-      setIndiaNews(india.slice(0, 12));
-      setWorldNews(world.slice(0, 12));
-    } catch (err) {
-      console.log(err);
+      const news = await fetchNews();
+      setIndiaNews(news.india);
+      setWorldNews(news.world);
+    } catch (error) {
+      console.error("Education news refresh failed:", error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadInitialNews = useEffectEvent(fetchNews);
+
+  useEffect(() => {
+    let active = true;
+    loadInitialNews()
+      .then((news) => {
+        if (active) {
+          setIndiaNews(news.india);
+          setWorldNews(news.world);
+        }
+      })
+      .catch((error) => console.error("Education news lookup failed:", error.message))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const resources = [
     {
@@ -139,7 +160,7 @@ export default function Trends() {
     return (
       <div className="min-h-screen flex justify-center items-center bg-gray-100">
 
-        <motion.div
+        <Motion.div
           animate={{
             rotate: 360,
           }}
@@ -151,7 +172,7 @@ export default function Trends() {
           className="text-6xl text-blue-600"
         >
           <FaSyncAlt />
-        </motion.div>
+        </Motion.div>
 
       </div>
     );
@@ -164,7 +185,7 @@ export default function Trends() {
 
         {/* HERO */}
 
-        <motion.div
+        <Motion.div
           initial={{
             opacity: 0,
             y: -20,
@@ -203,7 +224,7 @@ export default function Trends() {
 
           </div>
 
-        </motion.div>
+        </Motion.div>
 
         {/* Statistics */}
 
@@ -303,7 +324,7 @@ export default function Trends() {
             </div>
 
             <button
-              onClick={fetchNews}
+              onClick={refreshNews}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition"
             >
               <FaSyncAlt />
@@ -367,7 +388,7 @@ export default function Trends() {
 
             {resources.map((tool, index) => (
 
-              <motion.div
+              <Motion.div
                 whileHover={{
                   scale: 1.03,
                 }}
@@ -418,7 +439,7 @@ export default function Trends() {
 
                 </div>
 
-              </motion.div>
+              </Motion.div>
 
             ))}
 
@@ -508,7 +529,7 @@ export default function Trends() {
 
         {featured && (
 
-          <motion.div
+          <Motion.div
             initial={{
               opacity: 0,
               y: 20,
@@ -567,7 +588,7 @@ export default function Trends() {
 
             </div>
 
-          </motion.div>
+          </Motion.div>
 
         )}
 
@@ -597,7 +618,7 @@ export default function Trends() {
 
             const NewsCard = ({ article, index }) => (
 
-              <motion.div
+              <Motion.div
                 initial={{
                   opacity: 0,
                   y: 20,
@@ -680,7 +701,7 @@ export default function Trends() {
 
                 </div>
 
-              </motion.div>
+              </Motion.div>
 
             );
                         const filteredIndia = indiaNews.filter((article) => {

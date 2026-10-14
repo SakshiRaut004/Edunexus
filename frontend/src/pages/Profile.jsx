@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion as Motion } from "framer-motion";
 import {
   FaUser,
   FaEnvelope,
@@ -15,32 +15,23 @@ import {
 } from "react-icons/fa";
 
 export default function Profile() {
-  const [profile, setProfile] = useState({
-    name: "",
-    email: "",
-    role: "Faculty",
-    school: "EduNexus",
-    department: "Computer Science",
-    bio: "",
-  });
-
-  useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (storedUser) {
-      setProfile({
-        name: storedUser.name || "Faculty Member",
-        email: storedUser.email || "",
-        role: storedUser.role || "Faculty",
-        school: storedUser.school || "EduNexus",
-        department:
-          storedUser.department || "Computer Science",
-        bio:
-          storedUser.bio ||
-          "Dedicated educator committed to delivering quality education through innovative teaching methodologies.",
-      });
+  const [profile, setProfile] = useState(() => {
+    let storedUser = {};
+    try {
+      storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    } catch {
+      storedUser = {};
     }
-  }, []);
+
+    return {
+      name: storedUser.name || "Faculty Member",
+      email: storedUser.email || "",
+      role: storedUser.role || "Faculty",
+      school: storedUser.school || "EduNexus",
+      department: storedUser.department || "Computer Science",
+      bio: storedUser.bio || "Dedicated educator committed to delivering quality education through innovative teaching methodologies.",
+    };
+  });
 
   const handleChange = (e) => {
     const updatedProfile = {
@@ -84,7 +75,7 @@ export default function Profile() {
   ];
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -171,7 +162,7 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-4 mt-8 w-full">
 
                   {stats.map((item, index) => (
-                    <motion.div
+                    <Motion.div
                       key={index}
                       whileHover={{ scale: 1.05 }}
                       className={`${item.color} rounded-xl p-4 shadow text-center`}
@@ -187,7 +178,7 @@ export default function Profile() {
                       <p className="text-sm">
                         {item.title}
                       </p>
-                    </motion.div>
+                    </Motion.div>
                   ))}
 
                 </div>
@@ -371,7 +362,7 @@ export default function Profile() {
 
           {/* Teaching Overview */}
 
-          <motion.div
+          <Motion.div
             whileHover={{ y: -5 }}
             className="bg-white rounded-2xl shadow-lg p-6"
           >
@@ -432,11 +423,11 @@ export default function Profile() {
 
             </div>
 
-          </motion.div>
+          </Motion.div>
 
           {/* AI Usage */}
 
-          <motion.div
+          <Motion.div
             whileHover={{ y: -5 }}
             className="bg-white rounded-2xl shadow-lg p-6"
           >
@@ -497,11 +488,11 @@ export default function Profile() {
 
             </div>
 
-          </motion.div>
+          </Motion.div>
 
           {/* Account Status */}
 
-          <motion.div
+          <Motion.div
             whileHover={{ y: -5 }}
             className="bg-white rounded-2xl shadow-lg p-6"
           >
@@ -550,12 +541,12 @@ export default function Profile() {
 
             </div>
 
-          </motion.div>
+          </Motion.div>
 
         </div>
                 {/* Footer */}
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -600,9 +591,9 @@ export default function Profile() {
             </div>
 
           </div>
-        </motion.div>
+        </Motion.div>
 
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }
